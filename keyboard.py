@@ -64,6 +64,7 @@ if __name__ == "__main__":
                 elif 'g' == key:
                     latitude, longitude = get_latest_coords()
                     print(latitude, longitude)
+                    sleep(1)
 
 
                 px.set_cam_tilt_angle(tilt_angle)

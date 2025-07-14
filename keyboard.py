@@ -1,4 +1,4 @@
-from picarGPS import latestLat, latestLon
+from picarGPS import latestLat, latestLon, get_latest_coords
 from picarx import Picarx
 from time import sleep
 import picarGPS
@@ -62,8 +62,8 @@ if __name__ == "__main__":
                     if pan_angle < -30:
                         pan_angle = -30
                 elif 'g' == key:
-                    latestLat()
-                    latestLon()
+                    get_latest_coords()
+                    print(f"Latitude: {lat}, Longitude: {lon}")
 
 
                 px.set_cam_tilt_angle(tilt_angle)

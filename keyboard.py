@@ -62,8 +62,8 @@ if __name__ == "__main__":
                     if pan_angle < -30:
                         pan_angle = -30
                 elif 'g' == key:
-                    get_latest_coords()
-                    print(f"Latitude: {lat}, Longitude: {lon}")
+                    latitude, longitude = get_latest_coords()
+                    print(latitude, longitude)
 
 
                 px.set_cam_tilt_angle(tilt_angle)

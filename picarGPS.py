@@ -15,7 +15,7 @@ def get_latest_coords():
 
 #while True:
 #    try:
-        lat, lon = get_latest_coords()
+       # lat, lon = get_latest_coords()
        # maps_url = f"https://www.google.com/maps?q={lat},{lon}"
        # print(f"Latitude: {lat}, Longitude: {lon}")
        # print(f"Google Maps: {maps_url}\n")

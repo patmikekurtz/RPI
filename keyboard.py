@@ -1,4 +1,4 @@
-from picarGPS import latestLat, latestLon, get_latest_coords
+from picarGPS import get_latest_coords
 from picarx import Picarx
 from time import sleep
 import picarGPS

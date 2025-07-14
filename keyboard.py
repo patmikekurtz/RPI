@@ -17,8 +17,6 @@ Press keys on keyboard to control PiCar-X!
     ctrl+c: Press twice to exit the program
 '''
 
-def getGPS():
-
 
 def show_info():
     print("\033[H\033[J", end='')  # clear terminal windows

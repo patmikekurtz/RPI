@@ -11,7 +11,7 @@ import argparse
 # ===== Default Config =====
 VIDEO_WIDTH = 1280
 VIDEO_HEIGHT = 720
-DEVICE = "/dev/ttyACM0"  # Adjust if needed
+DEVICE = "/dev/ttyUSB0"  # Adjust if needed
 RECORD_PREVIEW = False
 # ==========================
 
@@ -68,4 +68,56 @@ def record_video(duration_sec, h264_path):
 
 def convert_video(h264_path, mp4_path):
     print("🎬 Converting video to MP4...")
-    cmd
+    cmd = [
+        "ffmpeg",
+        "-y",
+        "-framerate", "30",
+        "-i", str(h264_path),
+        "-c", "copy",
+        str(mp4_path)
+    ]
+    result = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    if result.returncode == 0:
+        print(f"✅ MP4 saved to: {mp4_path}")
+    else:
+        print("❌ Video conversion failed.")
+
+def main():
+    parser = argparse.ArgumentParser(description="Record flight video with optional GPS logging.")
+    parser.add_argument('--duration', type=int, default=15, help='Video duration in seconds (default: 15)')
+    parser.add_argument('--gps', action='store_true', help='Enable GPS logging')
+    args = parser.parse_args()
+
+    # Setup log folder
+    log_dir = Path.home() / "RPI" / "FlightLogs"
+    log_dir.mkdir(parents=True, exist_ok=True)
+
+    # Generate timestamped filenames
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    base_name = f"FlightVideo_{timestamp}"
+    h264_path = log_dir / f"{base_name}.h264"
+    mp4_path = log_dir / f"{base_name}.mp4"
+    gps_log_path = log_dir / f"GPSLog_{timestamp}.csv"
+
+    print("🚀 Starting flight recorder...")
+
+    # Start GPS thread if enabled
+    gps_thread = None
+    if args.gps:
+        gps_thread = threading.Thread(target=record_gps_data, args=(args.duration, gps_log_path))
+        gps_thread.start()
+
+    # Record video
+    record_video(args.duration, h264_path)
+
+    # Wait for GPS thread
+    if gps_thread:
+        gps_thread.join()
+
+    # Convert to MP4
+    convert_video(h264_path, mp4_path)
+
+    print("✅ Flight recording complete.")
+
+if __name__ == "__main__":
+    main()

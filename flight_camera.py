@@ -17,10 +17,11 @@ RECORD_PREVIEW = False
 
 def record_gps_data(duration_sec, gps_log_path):
     print(f"📍 Logging GPS to: {gps_log_path}")
-    session = gps.gps(mode=gps.WATCH_ENABLE)
+    session = gps.gps(mode=gps.WATCH_ENABLE | gps.WATCH_NEWSTYLE)
+
     with open(gps_log_path, 'w', newline='') as csvfile:
         writer = csv.writer(csvfile)
-        writer.writerow(['timestamp', 'latitude', 'longitude', 'altitude'])
+        writer.writerow(['timestamp', 'latitude', 'longitude', 'altitude', 'fix'])
 
         start_time = time.time()
         while time.time() - start_time < duration_sec:
@@ -30,11 +31,21 @@ def record_gps_data(duration_sec, gps_log_path):
                     lat = getattr(report, 'lat', None)
                     lon = getattr(report, 'lon', None)
                     alt = getattr(report, 'alt', None)
+                    mode = getattr(report, 'mode', 0)  # 1 = no fix, 2 = 2D, 3 = 3D
+
+                    writer.writerow([datetime.now().isoformat(), lat, lon, alt, mode])
+
                     if lat and lon:
-                        writer.writerow([datetime.now().isoformat(), lat, lon, alt])
-                        print(f"Lat: {lat}, Lon: {lon}, Alt: {alt}")
-            except Exception:
-                pass
+                        print(f"🛰️  Lat: {lat:.6f}, Lon: {lon:.6f}, Alt: {alt}, Fix Mode: {mode}")
+                    else:
+                        print(f"🔍 Waiting for fix... (Fix Mode: {mode})")
+            except StopIteration:
+                print("GPSD has terminated")
+                break
+            except Exception as e:
+                print(f"GPS error: {e}")
+                continue
+
             time.sleep(1)
 
 def record_video(duration_sec, h264_path):
@@ -57,53 +68,4 @@ def record_video(duration_sec, h264_path):
 
 def convert_video(h264_path, mp4_path):
     print("🎬 Converting video to MP4...")
-    cmd = [
-        "ffmpeg",
-        "-y",
-        "-framerate", "30",
-        "-i", str(h264_path),
-        "-c", "copy",
-        str(mp4_path)
-    ]
-    result = subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    if result.returncode == 0:
-        print(f"MP4 saved to: {mp4_path}")
-    else:
-        print("❌ Video conversion failed.")
-
-def main():
-    parser = argparse.ArgumentParser(description="Record flight video with optional GPS logging.")
-    parser.add_argument('--duration', type=int, default=15, help='Video duration in seconds (default: 15)')
-    parser.add_argument('--gps', action='store_true', help='Enable GPS logging')
-    args = parser.parse_args()
-
-    # Setup file paths
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    desktop = Path.home() / "Desktop"
-    video_base = f"FlightVideo_{timestamp}"
-    h264_path = desktop / f"{video_base}.h264"
-    mp4_path = desktop / f"{video_base}.mp4"
-    gps_log_path = desktop / f"GPSLog_{timestamp}.csv"
-
-    print("🚀 Starting flight recorder...")
-
-    # Start GPS thread if enabled
-    gps_thread = None
-    if args.gps:
-        gps_thread = threading.Thread(target=record_gps_data, args=(args.duration, gps_log_path))
-        gps_thread.start()
-
-    # Record video
-    record_video(args.duration, h264_path)
-
-    # Wait for GPS thread
-    if gps_thread:
-        gps_thread.join()
-
-    # Convert to MP4
-    convert_video(h264_path, mp4_path)
-
-    print("✅ Flight recording complete.")
-
-if __name__ == "__main__":
-    main()
+    cmd

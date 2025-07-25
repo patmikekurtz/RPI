@@ -42,7 +42,7 @@ def loop():
     while start <= 100:
         print (start)
         motor(start)
-        time.sleep(0.2)
+        time.sleep(10)
         start = start + 25
 
 def destroy():

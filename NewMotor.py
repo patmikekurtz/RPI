@@ -1,69 +1,71 @@
-#!/usr/bin/env python3
-#############################################################################
-# Filename    : Motor.py
-# Description : Control Motor with L293D
-# Author      : www.freenove.com
-# modification: 2023/05/11
-########################################################################
-from gpiozero import DigitalOutputDevice,PWMOutputDevice
+import RPi.GPIO as GPIO
 import time
-from ADCDevice import *
 
-# define the pins connected to L293D
-motoRPin1 = DigitalOutputDevice(27)           # define L293D pin according to BCM Numbering
-motoRPin2 = DigitalOutputDevice(17)           # define L293D pin according to BCM Numbering
-enablePin = PWMOutputDevice(22,frequency=1000)
-motoRPin3 = DigitalOutputDevice(18)
-motoRPin4 = DigitalOutputDevice(23)
-enablePin2 = PWMOutputDevice(25, frequency=1000)
+# Motor A pins
+IN1 = 23
+IN2 = 24
+ENA = 18
 
-# mapNUM function: map the value from a range of mapping to another range.
-def mapNUM(value,fromLow,fromHigh,toLow,toHigh):
-    return (toHigh-toLow)*(value-fromLow) / (fromHigh-fromLow) + toLow
+# Motor B pins
+IN3 = 27
+IN4 = 22
+ENB = 13
 
-# motor function: determine the direction and speed of the motor according to the input ADC value input
-def motor(speed):
+# Setup
+GPIO.setmode(GPIO.BCM)
+GPIO.setwarnings(False)
 
-    if (speed > 0):  # make motor turn forward
-        motoRPin1.on()        # motoRPin1 output HIGH level
-        motoRPin2.off()       # motoRPin2 output LOW level
-        motoRPin3.on()
-        motoRPin4.off()
-        print ('Turn Forward...')
-    elif (speed < 0): # make motor turn backward
-        motoRPin1.off()
-        motoRPin2.on()
-        motoRPin3.off()
-        motoRPin4.on()
-        print ('Turn Backward...')
-    else :
-        motoRPin1.off()
-        motoRPin2.off()
-        motoRPin3.off()
-        motoRPin4.off()
-        print ('Motor Stop...')
-    b=mapNUM(abs(speed),0,128,0,100)
-    enablePin.value = b / 100.0     # set dc value as the duty cycle
-    enablePin2.value = b / 100.0
-    print ('The PWM duty cycle is %d%%\n'%(abs(speed)*100/127))   # print PMW duty cycle.
+GPIO.setup(IN1, GPIO.OUT)
+GPIO.setup(IN2, GPIO.OUT)
+GPIO.setup(ENA, GPIO.OUT)
 
-def loop():
-    start = -50
-    while start <= 50:
-        print (start)
-        motor(start)
-        time.sleep(2)
-        start = start + 25
+GPIO.setup(IN3, GPIO.OUT)
+GPIO.setup(IN4, GPIO.OUT)
+GPIO.setup(ENB, GPIO.OUT)
 
-def destroy():
-    motoRPin1.close()
-    motoRPin2.close()
-    enablePin.close()
+# PWM setup
+pwmA = GPIO.PWM(ENA, 1000)
+pwmB = GPIO.PWM(ENB, 1000)
+pwmA.start(70)  # 70% speed
+pwmB.start(70)
 
-if __name__ == '__main__':  # Program entrance
-    print ('Program is starting ... ')
-    try:
-        loop()
-    except KeyboardInterrupt: # Press ctrl-c to end the program.
-        destroy()
-        print("Ending program")
+def motorA_forward():
+    GPIO.output(IN1, GPIO.HIGH)
+    GPIO.output(IN2, GPIO.LOW)
+
+def motorA_backward():
+    GPIO.output(IN1, GPIO.LOW)
+    GPIO.output(IN2, GPIO.HIGH)
+
+def motorA_stop():
+    GPIO.output(IN1, GPIO.LOW)
+    GPIO.output(IN2, GPIO.LOW)
+
+def motorB_forward():
+    GPIO.output(IN3, GPIO.HIGH)
+    GPIO.output(IN4, GPIO.LOW)
+
+def motorB_backward():
+    GPIO.output(IN3, GPIO.LOW)
+    GPIO.output(IN4, GPIO.HIGH)
+
+def motorB_stop():
+    GPIO.output(IN3, GPIO.LOW)
+    GPIO.output(IN4, GPIO.LOW)
+
+try:
+    motorA_forward()
+    motorB_backward()
+    time.sleep(3)
+
+    motorA_backward()
+    motorB_forward()
+    time.sleep(3)
+
+    motorA_stop()
+    motorB_stop()
+
+finally:
+    pwmA.stop()
+    pwmB.stop()
+    GPIO.cleanup()

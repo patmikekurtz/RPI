@@ -38,11 +38,11 @@ def motor(speed):
     print ('The PWM duty cycle is %d%%\n'%(abs(speed)*100/127))   # print PMW duty cycle.
 
 def loop():
-    start = -100
-    while start <= 100:
+    start = -50
+    while start <= 50:
         print (start)
         motor(start)
-        time.sleep(10)
+        time.sleep(2)
         start = start + 25
 
 def destroy():

@@ -40,8 +40,7 @@ def motor(speed):
 def loop():
     value = 1
     while value < 102:
-        if(value > 102 )
-            False
+
         print ('Speed : %d'%(value))
         motor(value)
         time.sleep(0.5)

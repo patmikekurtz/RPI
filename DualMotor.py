@@ -33,7 +33,7 @@ def motor(speed):
         motoRPin2.off()
         print ('Motor Stop...')
     b=mapNUM(abs(speed),0,128,0,100)
-    enablePin.speed = b / 100.0     # set dc value as the duty cycle
+    enablePin.value = b / 100.0     # set dc value as the duty cycle
     print ('The PWM duty cycle is %d%%\n'%(abs(speed)*100/127))   # print PMW duty cycle.
 
 def loop():

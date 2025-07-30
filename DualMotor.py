@@ -46,8 +46,6 @@ def loop():
         time.sleep(0.5)
         value = value + 10
 
-
-
 def destroy():
     motoRPin1.close()
     motoRPin2.close()
@@ -56,7 +54,6 @@ def destroy():
 
 if __name__ == '__main__':  # Program entrance
     print ('Program is starting ... ')
-    setup()
     try:
         loop()
     except KeyboardInterrupt: # Press ctrl-c to end the program.

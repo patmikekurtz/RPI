@@ -20,7 +20,6 @@ def mapNUM(value,fromLow,fromHigh,toLow,toHigh):
 
 # motor function: determine the direction and speed of the motor according to the input ADC value input
 def motor(speed):
-    value = ADC -128
     if (speed > 0):  # make motor turn forward
         motoRPin1.on()        # motoRPin1 output HIHG level
         motoRPin2.off()       # motoRPin2 output LOW level

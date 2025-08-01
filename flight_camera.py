@@ -4,6 +4,7 @@ import time
 import threading
 import subprocess
 from datetime import datetime
+from itertools import filterfalse
 from pathlib import Path
 import gps
 import argparse
@@ -106,46 +107,54 @@ def main():
     parser = argparse.ArgumentParser(description="Record flight video with optional GPS logging.")
     parser.add_argument('--duration', type=int, default=15, help='Duration of video (seconds)')
     parser.add_argument('--gps', action='store_true', help='Enable GPS logging')
+    parser.add_argument('--loop', action='store_true', help='Loop video recording')
     args = parser.parse_args()
 
-    # Folder setup
-    log_dir = Path.home() / "RPI" / "FlightLogs"
-    log_dir.mkdir(parents=True, exist_ok=True)
+    myLoop = True
 
-    # File names
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    base = f"FlightVideo_{timestamp}"
-    h264_path = log_dir / f"{base}.h264"
-    mp4_path = log_dir / f"{base}.mp4"
-    gps_log_path = log_dir / f"GPSLog_{timestamp}.csv"
-    imu_log_path = log_dir / f"IMULog_{timestamp}.csv"
+    while(myLoop):
+        # Folder setup
+        log_dir = Path.home() / "RPI" / "FlightLogs"
+        log_dir.mkdir(parents=True, exist_ok=True)
 
-    print("🚀 Starting flight recorder...")
+        # File names
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        base = f"FlightVideo_{timestamp}"
+        h264_path = log_dir / f"{base}.h264"
+        mp4_path = log_dir / f"{base}.mp4"
+        gps_log_path = log_dir / f"GPSLog_{timestamp}.csv"
+        imu_log_path = log_dir / f"IMULog_{timestamp}.csv"
 
-    threads = []
+        print("🚀 Starting flight recorder...")
 
-    # Start IMU logging (always enabled)
-    imu_thread = threading.Thread(target=log_imu_data, args=(args.duration, imu_log_path))
-    imu_thread.start()
-    threads.append(imu_thread)
+        threads = []
 
-    # Optional GPS logging
-    if args.gps:
-        gps_thread = threading.Thread(target=record_gps_data, args=(args.duration, gps_log_path))
-        gps_thread.start()
-        threads.append(gps_thread)
+        # Start IMU logging (always enabled)
+        imu_thread = threading.Thread(target=log_imu_data, args=(args.duration, imu_log_path))
+        imu_thread.start()
+        threads.append(imu_thread)
 
-    # Record video
-    record_video(args.duration, h264_path)
+        # Optional GPS logging
+        if args.gps:
+            gps_thread = threading.Thread(target=record_gps_data, args=(args.duration, gps_log_path))
+            gps_thread.start()
+            threads.append(gps_thread)
 
-    # Wait for other threads
-    for t in threads:
-        t.join()
+        # Record video
+        record_video(args.duration, h264_path)
 
-    # Convert to MP4
-    convert_video(h264_path, mp4_path)
+        # Wait for other threads
+        for t in threads:
+            t.join()
 
-    print("✅ Flight recording complete.")
+        # Convert to MP4
+        convert_video(h264_path, mp4_path)
+
+        print("✅ Flight recording complete.")
+        myLoop = False
+        if args.loop:
+            myLoop = True
+
 
 if __name__ == "__main__":
     main()

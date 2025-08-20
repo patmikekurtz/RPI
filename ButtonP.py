@@ -16,10 +16,8 @@ def wait_for_button():
     while True:
         if GPIO.input(BTN1) == GPIO.LOW:   # active low
             print("Button on GPIO 27 pressed!")
-            break
         if GPIO.input(BTN2) == GPIO.LOW:
             print("Button on GPIO 22 pressed!")
-            break
         time.sleep(0.05)  # debounce polling delay
 
 if __name__ == "__main__":

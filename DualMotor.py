@@ -38,7 +38,7 @@ def motor(speed):
 
 def loop():
     value = 1
-    while value < 102:
+    while value < 202:
 
         print ('Speed : %d'%(value))
         motor(value)

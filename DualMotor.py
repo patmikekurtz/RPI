@@ -38,11 +38,11 @@ def motor(speed):
 
 def loop():
     value = 1
-    while value < 202:
+    while value < 102:
 
         print ('Speed : %d'%(value))
         motor(value)
-        time.sleep(0.5)
+        time.sleep(5)
         value = value + 10
 
 def destroy():

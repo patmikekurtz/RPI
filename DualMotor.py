@@ -25,17 +25,19 @@ def mapNUM(value,fromLow,fromHigh,toLow,toHigh):
 # motor function: determine the direction and speed of the motor according to the input ADC value input
 def motor(speed):
     if (speed > 0):  # make motor turn forward
-        motoRPin1.on()        # motoRPin1 output HIGH level
-        motoRPin2.off()       # motoRPin2 output LOW level
+        motoRPin1.off()        # motoRPin1 output HIGH level
+        motoRPin2.on()       # motoRPin2 output LOW level
         print ('Turn Forward...')
 
         motoRPin3.on()
         motoRPin4.off()
 
     elif (speed < 0): # make motor turn backward
-        motoRPin1.off()
-        motoRPin2.on()
+        motoRPin1.on()
+        motoRPin2.off()
         print ('Turn Backward...')
+        motoRPin3.off()
+        motoRPin4.on()
     else :
         motoRPin1.off()
         motoRPin2.off()
@@ -46,7 +48,7 @@ def motor(speed):
     print ('The PWM duty cycle is %d%%\n'%(abs(speed)*100/127))   # print PMW duty cycle.
 
 def loop():
-    value = 1
+    value = -50
     while value < 102:
 
         print ('Speed : %d'%(value))

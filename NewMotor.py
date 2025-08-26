@@ -1,5 +1,3 @@
-from readline import backend
-
 import RPi.GPIO as gpio
 import time
 def init():

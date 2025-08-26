@@ -1,71 +1,55 @@
-import RPi.GPIO as GPIO
+import RPi.GPIO as gpio
 import time
-
-# Motor A pins
-IN1 = 23
-IN2 = 24
-ENA = 18
-
-# Motor B pins
-IN3 = 27
-IN4 = 22
-ENB = 13
-
-# Setup
-GPIO.setmode(GPIO.BCM)
-GPIO.setwarnings(False)
-
-GPIO.setup(IN1, GPIO.OUT)
-GPIO.setup(IN2, GPIO.OUT)
-GPIO.setup(ENA, GPIO.OUT)
-
-GPIO.setup(IN3, GPIO.OUT)
-GPIO.setup(IN4, GPIO.OUT)
-GPIO.setup(ENB, GPIO.OUT)
-
-# PWM setup
-pwmA = GPIO.PWM(ENA, 1000)
-pwmB = GPIO.PWM(ENB, 1000)
-pwmA.start(70)  # 70% speed
-pwmB.start(70)
-
-def motorA_forward():
-    GPIO.output(IN1, GPIO.HIGH)
-    GPIO.output(IN2, GPIO.LOW)
-
-def motorA_backward():
-    GPIO.output(IN1, GPIO.LOW)
-    GPIO.output(IN2, GPIO.HIGH)
-
-def motorA_stop():
-    GPIO.output(IN1, GPIO.LOW)
-    GPIO.output(IN2, GPIO.LOW)
-
-def motorB_forward():
-    GPIO.output(IN3, GPIO.HIGH)
-    GPIO.output(IN4, GPIO.LOW)
-
-def motorB_backward():
-    GPIO.output(IN3, GPIO.LOW)
-    GPIO.output(IN4, GPIO.HIGH)
-
-def motorB_stop():
-    GPIO.output(IN3, GPIO.LOW)
-    GPIO.output(IN4, GPIO.LOW)
-
-try:
-    motorA_forward()
-    motorB_backward()
-    time.sleep(3)
-
-    motorA_backward()
-    motorB_forward()
-    time.sleep(3)
-
-    motorA_stop()
-    motorB_stop()
-
-finally:
-    pwmA.stop()
-    pwmB.stop()
-    GPIO.cleanup()
+def init():
+    gpio.setmode(gpio.BCM)
+    gpio.setup(17, gpio.OUT)
+    gpio.setup(22, gpio.OUT)
+    gpio.setup(23, gpio.OUT)
+    gpio.setup(24, gpio.OUT)
+def forward(sec):
+    init()
+    gpio.output(17, False)
+    gpio.output(22, True)
+    gpio.output(23, True)
+    gpio.output(24, False)
+    time.sleep(sec)
+    gpio.cleanup()
+def reverse(sec):
+    init()
+    gpio.output(17, True)
+    gpio.output(22, False)
+    gpio.output(23, False)7
+    gpio.output(24, True)
+    time.sleep(sec)
+    gpio.cleanup()
+def left_turn(sec):
+    init()
+    gpio.output(17, True)
+    gpio.output(22, False)
+    gpio.output(23, True)
+    gpio.output(24, False)
+    time.sleep(sec)
+    gpio.cleanup()
+def right_turn(sec):
+    init()
+    gpio.output(17, False)
+    gpio.output(22, True)
+    gpio.output(23, False)
+    gpio.output(24, True)
+    time.sleep(sec)
+    gpio.cleanup()
+seconds = 3
+time.sleep(seconds)
+print("forward")
+forward(seconds)
+time.sleep(seconds-2)
+print("right")
+right_turn(seconds)
+time.sleep(seconds-2)
+time.sleep(seconds)
+print("forward")
+forward(seconds)
+time.sleep(seconds-2)
+print("right")
+right_turn(seconds)
+time.sleep(seconds-2)

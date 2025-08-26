@@ -1,3 +1,5 @@
+from readline import backend
+
 import RPi.GPIO as gpio
 import time
 def init():
@@ -47,9 +49,9 @@ print("right")
 right_turn(seconds)
 time.sleep(seconds-2)
 time.sleep(seconds)
-print("forward")
-forward(seconds)
+print("left")
+left_turn(seconds)
 time.sleep(seconds-2)
-print("right")
-right_turn(seconds)
+print("backwards")
+reverse(seconds)
 time.sleep(seconds-2)

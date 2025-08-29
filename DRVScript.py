@@ -6,6 +6,8 @@ import sys
 IN1 = 17  # BCM
 IN2 = 27  # BCM
 PWM_FREQ = 1000
+IN3 = 19
+IN4 = 26
 
 def p(msg):
     print(msg, flush=True)
@@ -14,35 +16,57 @@ GPIO.setwarnings(False)
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(IN1, GPIO.OUT)
 GPIO.setup(IN2, GPIO.OUT)
+GPIO.setup(IN3, GPIO.OUT)
+GPIO.setup(IN4, GPIO.OUT)
 
 pwm1 = GPIO.PWM(IN1, PWM_FREQ)
 pwm2 = GPIO.PWM(IN2, PWM_FREQ)
+pwm3 = GPIO.PWM(IN3, PWM_FREQ)
+pwm4 = GPIO.PWM(IN4, PWM_FREQ)
+
 pwm1.start(0)
 pwm2.start(0)
+pwm3.start(0)
+pwm4.start(0)
 
 def coast():
     pwm1.ChangeDutyCycle(0)
     pwm2.ChangeDutyCycle(0)
+    pwm3.ChangeDutyCycle(0)
+    pwm4.ChangeDutyCycle(0)
+
     GPIO.output(IN1, GPIO.LOW)
     GPIO.output(IN2, GPIO.LOW)
+    GPIO.output(IN3, GPIO.LOW)
+    GPIO.output(IN4, GPIO.LOW)
 
 def brake():
     pwm1.ChangeDutyCycle(0)
     pwm2.ChangeDutyCycle(0)
+    pwm3.ChangeDutyCycle(0)
+    pwm4.ChangeDutyCycle(0)
     GPIO.output(IN1, GPIO.HIGH)
     GPIO.output(IN2, GPIO.HIGH)
+    GPIO.output(IN3, GPIO.HIGH)
+    GPIO.output(IN4, GPIO.HIGH)
 
 def forward(speed_pct):
     s = max(0, min(100, int(speed_pct)))
     GPIO.output(IN2, GPIO.LOW)
+    GPIO.output(IN4, GPIO.LOW)
     pwm2.ChangeDutyCycle(0)
+    pwm4.ChangeDutyCycle(0)
     pwm1.ChangeDutyCycle(s)
+    pwm3.ChangeDutyCycle(s)
 
 def backward(speed_pct):
     s = max(0, min(100, int(speed_pct)))
     GPIO.output(IN1, GPIO.LOW)
+    GPIO.output(IN3, GPIO.LOW)
     pwm1.ChangeDutyCycle(0)
+    pwm3.ChangeDutyCycle(0)
     pwm2.ChangeDutyCycle(s)
+    pwm4.ChangeDutyCycle(s)
 
 def ramp(func, start, stop, step=10, dwell=0.1):
     if start <= stop:
@@ -83,6 +107,6 @@ except KeyboardInterrupt:
     p("Interrupted")
 finally:
     coast()
-    pwm1.stop(); pwm2.stop()
+    pwm1.stop(); pwm2.stop(); pwm3.stop(); pwm4.stop()
     GPIO.cleanup()
     p("GPIO cleanup done")

@@ -3,125 +3,113 @@ import RPi.GPIO as GPIO
 import time
 import gc
 
-# ===== BCM pin map =====
-# Motor A (DRV8833 A-side)
-A_IN1 = 17   # physical pin 11
-A_IN2 = 27   # physical pin 13
-# Motor B (DRV8833 B-side)
-B_IN1 = 19   # physical pin 35
-B_IN2 = 26   # physical pin 37
+# ===== BCM pins =====
+# Motor A
+A_IN1 = 17
+A_IN2 = 27
+# Motor B
+B_IN1 = 19
+B_IN2 = 26
 
-PWM_FREQ = 1000  # 1 kHz
+PWM_FREQ = 1000           # you can also try 2000–20000 if you hear whine
+SAFE_START_DELAY = 0.15   # seconds between starting motor A and B
+RAMP_STEP = 8
+RAMP_DWELL = 0.08
 
-def p(msg):
-    print(msg, flush=True)
+def p(msg): print(msg, flush=True)
 
 GPIO.setwarnings(False)
 GPIO.setmode(GPIO.BCM)
 
 class Motor:
     def __init__(self, in1, in2, pwm_freq=PWM_FREQ):
-        self.in1 = in1
-        self.in2 = in2
+        self.in1, self.in2 = in1, in2
         GPIO.setup(self.in1, GPIO.OUT, initial=GPIO.LOW)
         GPIO.setup(self.in2, GPIO.OUT, initial=GPIO.LOW)
-        self.pwm1 = GPIO.PWM(self.in1, pwm_freq)
-        self.pwm2 = GPIO.PWM(self.in2, pwm_freq)
-        self.pwm1.start(0)
-        self.pwm2.start(0)
+        self.pwm1 = GPIO.PWM(self.in1, pwm_freq); self.pwm1.start(0)
+        self.pwm2 = GPIO.PWM(self.in2, pwm_freq); self.pwm2.start(0)
         self.coast()
 
-    def forward(self, speed_pct):
-        s = max(0, min(100, int(speed_pct)))
+    def forward(self, pct):
+        s = max(0, min(100, int(pct)))
         GPIO.output(self.in2, GPIO.LOW)
         self.pwm2.ChangeDutyCycle(0)
         self.pwm1.ChangeDutyCycle(s)
 
-    def backward(self, speed_pct):
-        s = max(0, min(100, int(speed_pct)))
+    def backward(self, pct):
+        s = max(0, min(100, int(pct)))
         GPIO.output(self.in1, GPIO.LOW)
         self.pwm1.ChangeDutyCycle(0)
         self.pwm2.ChangeDutyCycle(s)
 
     def coast(self):
-        # Hi-Z (coast)
-        self.pwm1.ChangeDutyCycle(0)
-        self.pwm2.ChangeDutyCycle(0)
-        GPIO.output(self.in1, GPIO.LOW)
-        GPIO.output(self.in2, GPIO.LOW)
+        self.pwm1.ChangeDutyCycle(0); self.pwm2.ChangeDutyCycle(0)
+        GPIO.output(self.in1, GPIO.LOW); GPIO.output(self.in2, GPIO.LOW)
 
     def brake(self):
-        # Active brake
-        self.pwm1.ChangeDutyCycle(0)
-        self.pwm2.ChangeDutyCycle(0)
-        GPIO.output(self.in1, GPIO.HIGH)
-        GPIO.output(self.in2, GPIO.HIGH)
+        self.pwm1.ChangeDutyCycle(0); self.pwm2.ChangeDutyCycle(0)
+        GPIO.output(self.in1, GPIO.HIGH); GPIO.output(self.in2, GPIO.HIGH)
 
     def close(self):
-        # Stop PWM and release references BEFORE GPIO.cleanup()
-        try:
-            self.coast()
-        except Exception:
-            pass
+        try: self.coast()
+        except: pass
         for pwm in (self.pwm1, self.pwm2):
-            try:
-                pwm.ChangeDutyCycle(0)
-            except Exception:
-                pass
-            try:
-                pwm.stop()
-            except Exception:
-                pass
-        self.pwm1 = None
-        self.pwm2 = None
+            try: pwm.ChangeDutyCycle(0)
+            except: pass
+            try: pwm.stop()
+            except: pass
+        self.pwm1 = None; self.pwm2 = None
 
-def ramp(motor, func_name, start, stop, step=10, dwell=0.1, label=""):
-    fn = getattr(motor, func_name)
-    rng = range(start, stop + (1 if start <= stop else -1), step if start <= stop else -step)
-    for s in rng:
-        p(f"{label}{func_name} -> {s}%")
-        fn(s)
-        time.sleep(dwell)
+def ramp_to(motor, dir_fn, target, step=RAMP_STEP, dwell=RAMP_DWELL):
+    cur = 0
+    for s in range(0, target + 1, step):
+        dir_fn(s); cur = s; time.sleep(dwell)
+    return cur
+
+def ramp_down(motor, dir_fn, start, step=RAMP_STEP, dwell=RAMP_DWELL):
+    for s in range(start, -1, -step):
+        dir_fn(s); time.sleep(dwell)
 
 def main():
-    mA = Motor(A_IN1, A_IN2, PWM_FREQ)
-    mB = Motor(B_IN1, B_IN2, PWM_FREQ)
-
+    mA = Motor(A_IN1, A_IN2)
+    mB = Motor(B_IN1, B_IN2)
     try:
-        # --- Motor A test ---
-        p("Motor A: Coast to start"); mA.coast(); time.sleep(0.4)
-        p("Motor A: Ramp FORWARD up");   ramp(mA, "forward", 0, 100, step=20, dwell=0.2, label="[A] ")
-        p("Motor A: Ramp FORWARD down"); ramp(mA, "forward", 100, 0, step=20, dwell=0.2, label="[A] ")
-        p("Motor A: Brake"); mA.brake(); time.sleep(0.5)
-        p("Motor A: Ramp BACKWARD up");   ramp(mA, "backward", 0, 100, step=20, dwell=0.2, label="[A] ")
-        p("Motor A: Ramp BACKWARD down"); ramp(mA, "backward", 100, 0, step=20, dwell=0.2, label="[A] ")
-        p("Motor A: Coast"); mA.coast(); time.sleep(0.5)
+        # Solo tests remain the same
+        p("Motor A forward ramp"); top = ramp_to(mA, mA.forward, 100); ramp_down(mA, mA.forward, top); mA.brake(); time.sleep(0.4)
+        p("Motor A backward ramp"); top = ramp_to(mA, mA.backward, 100); ramp_down(mA, mA.backward, top); mA.coast(); time.sleep(0.4)
 
-        # --- Motor B test ---
-        p("Motor B: Coast to start"); mB.coast(); time.sleep(0.4)
-        p("Motor B: Ramp FORWARD up");   ramp(mB, "forward", 0, 100, step=20, dwell=0.2, label="[B] ")
-        p("Motor B: Ramp FORWARD down"); ramp(mB, "forward", 100, 0, step=20, dwell=0.2, label="[B] ")
-        p("Motor B: Brake"); mB.brake(); time.sleep(0.5)
-        p("Motor B: Ramp BACKWARD up");   ramp(mB, "backward", 0, 100, step=20, dwell=0.2, label="[B] ")
-        p("Motor B: Ramp BACKWARD down"); ramp(mB, "backward", 100, 0, step=20, dwell=0.2, label="[B] ")
-        p("Motor B: Coast"); mB.coast(); time.sleep(0.5)
+        p("Motor B forward ramp"); top = ramp_to(mB, mB.forward, 100); ramp_down(mB, mB.forward, top); mB.brake(); time.sleep(0.4)
+        p("Motor B backward ramp"); top = ramp_to(mB, mB.backward, 100); ramp_down(mB, mB.backward, top); mB.coast(); time.sleep(0.4)
 
-        # --- Both together ---
-        p("Both: forward 50% for 2s"); mA.forward(50); mB.forward(50); time.sleep(2.0)
-        p("Both: opposite 60% for 2s"); mA.forward(60); mB.backward(60); time.sleep(2.0)
-        p("Both: brake 0.7s"); mA.brake(); mB.brake(); time.sleep(0.7)
-        p("Both: coast and done"); mA.coast(); mB.coast(); time.sleep(0.5)
+        # === Both together with staggered soft-start ===
+        target = 60  # start conservative; increase if stable
+        p(f"Both forward soft-start to {target}% (staggered)")
+        # Start A
+        mA.forward(0); mB.forward(0); time.sleep(0.05)
+        ramp_to(mA, mA.forward, target)
+        time.sleep(SAFE_START_DELAY)
+        ramp_to(mB, mB.forward, target)
+        time.sleep(2.0)
+
+        # Soft stop (coast) rather than hard brake to avoid spikes
+        ramp_down(mA, mA.forward, target, step=RAMP_STEP); ramp_down(mB, mB.forward, target, step=RAMP_STEP)
+        mA.coast(); mB.coast(); time.sleep(0.3)
+
+        p(f"Both opposite dirs soft-start to {target}% (staggered)")
+        ramp_to(mA, mA.forward, target)
+        time.sleep(SAFE_START_DELAY)
+        ramp_to(mB, mB.backward, target)
+        time.sleep(2.0)
+        ramp_down(mA, mA.forward, target); ramp_down(mB, mB.backward, target)
+        mA.coast(); mB.coast(); time.sleep(0.3)
+
+        p("Done")
 
     except KeyboardInterrupt:
         p("Interrupted")
     finally:
-        # CRITICAL ORDER: stop & destroy PWM objects BEFORE GPIO.cleanup()
-        mA.close(); mB.close()
-        del mA, mB
-        gc.collect()           # ensure PWM.__del__ runs now while chip is still open
-        time.sleep(0.05)       # tiny gap to be extra safe
-        GPIO.cleanup()
-        p("GPIO cleanup done")
+        mA.close(); mB.close(); gc.collect(); time.sleep(0.05)
+        GPIO.cleanup(); p("GPIO cleanup done")
 
 if __name__ == "__main__":
     main()

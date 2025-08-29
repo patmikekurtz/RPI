@@ -89,4 +89,39 @@ def main():
 
     try:
         # --- Motor A test ---
-        p
+        p("Motor A: Coast to start"); mA.coast(); time.sleep(0.4)
+        p("Motor A: Ramp FORWARD up");   ramp(mA, "forward", 0, 100, step=20, dwell=0.2, label="[A] ")
+        p("Motor A: Ramp FORWARD down"); ramp(mA, "forward", 100, 0, step=20, dwell=0.2, label="[A] ")
+        p("Motor A: Brake"); mA.brake(); time.sleep(0.5)
+        p("Motor A: Ramp BACKWARD up");   ramp(mA, "backward", 0, 100, step=20, dwell=0.2, label="[A] ")
+        p("Motor A: Ramp BACKWARD down"); ramp(mA, "backward", 100, 0, step=20, dwell=0.2, label="[A] ")
+        p("Motor A: Coast"); mA.coast(); time.sleep(0.5)
+
+        # --- Motor B test ---
+        p("Motor B: Coast to start"); mB.coast(); time.sleep(0.4)
+        p("Motor B: Ramp FORWARD up");   ramp(mB, "forward", 0, 100, step=20, dwell=0.2, label="[B] ")
+        p("Motor B: Ramp FORWARD down"); ramp(mB, "forward", 100, 0, step=20, dwell=0.2, label="[B] ")
+        p("Motor B: Brake"); mB.brake(); time.sleep(0.5)
+        p("Motor B: Ramp BACKWARD up");   ramp(mB, "backward", 0, 100, step=20, dwell=0.2, label="[B] ")
+        p("Motor B: Ramp BACKWARD down"); ramp(mB, "backward", 100, 0, step=20, dwell=0.2, label="[B] ")
+        p("Motor B: Coast"); mB.coast(); time.sleep(0.5)
+
+        # --- Both together ---
+        p("Both: forward 50% for 2s"); mA.forward(50); mB.forward(50); time.sleep(2.0)
+        p("Both: opposite 60% for 2s"); mA.forward(60); mB.backward(60); time.sleep(2.0)
+        p("Both: brake 0.7s"); mA.brake(); mB.brake(); time.sleep(0.7)
+        p("Both: coast and done"); mA.coast(); mB.coast(); time.sleep(0.5)
+
+    except KeyboardInterrupt:
+        p("Interrupted")
+    finally:
+        # CRITICAL ORDER: stop & destroy PWM objects BEFORE GPIO.cleanup()
+        mA.close(); mB.close()
+        del mA, mB
+        gc.collect()           # ensure PWM.__del__ runs now while chip is still open
+        time.sleep(0.05)       # tiny gap to be extra safe
+        GPIO.cleanup()
+        p("GPIO cleanup done")
+
+if __name__ == "__main__":
+    main()
